@@ -14,6 +14,10 @@
   </p>
 </p>
 
+<p align="center">
+  <img src="demo.gif" alt="Expert demo — translating novice input through domain experts" width="880">
+</p>
+
 ---
 
 ## You say this:
