@@ -1,0 +1,14 @@
+{
+  "name": "expert-local",
+  "owner": {
+    "name": "jaredmoskowitz"
+  },
+  "plugins": [
+    {
+      "name": "expert",
+      "source": "./",
+      "description": "Domain-expert translation layer — reformulates novice input through specialist personas before Claude acts",
+      "version": "1.0.0"
+    }
+  ]
+}

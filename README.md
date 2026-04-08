@@ -58,20 +58,11 @@ It sits between you and Claude. You speak plain english. Claude gets expert-leve
 
 ## Install
 
+Register the marketplace and install the plugin:
+
 ```bash
-git clone https://github.com/VeryLegit/expert.git ~/.claude/expert
-```
-
-Add to `~/.claude/plugins/installed_plugins.json`:
-
-```json
-"expert@local": [{ "scope": "user", "installPath": "~/.claude/expert", "version": "1.0.0" }]
-```
-
-Add to `~/.claude/settings.json` under `enabledPlugins`:
-
-```json
-"expert@local": true
+claude plugin marketplace add https://github.com/VeryLegit/expert
+claude plugin install expert@expert
 ```
 
 Restart Claude Code. Done.
