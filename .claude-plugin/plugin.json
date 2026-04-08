@@ -1,0 +1,16 @@
+{
+  "name": "expert",
+  "version": "1.0.0",
+  "description": "Expert translation layer for Claude Code. Reformulates novice input through domain expert personas before Claude acts. 7 built-in profiles with auto-selection. Toggle with /expert.",
+  "author": {
+    "name": "jaredmoskowitz"
+  },
+  "commands": ["./commands"],
+  "keywords": [
+    "expert",
+    "translation",
+    "meta-prompting",
+    "domain-expert",
+    "profiles"
+  ]
+}
