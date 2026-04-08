@@ -1,223 +1,286 @@
-# Expert
-
-**A domain-expert translation layer for Claude Code.**
-
-You say what you want in plain language. Expert reformulates it through the right domain specialist before Claude acts — closing the gap between what you said and what an expert would have said.
+<p align="center">
+  <h1 align="center">expert</h1>
+  <p align="center">
+    <strong>You don't know what you don't know. Now you don't have to.</strong>
+  </p>
+  <p align="center">
+    A Claude Code plugin that makes you sound like you know what you're talking about.
+  </p>
+  <p align="center">
+    <a href="#install">Install</a> &#8226;
+    <a href="#profiles">Profiles</a> &#8226;
+    <a href="#add-your-own">Add Your Own</a> &#8226;
+    <a href="LICENSE">MIT License</a>
+  </p>
+</p>
 
 ---
 
-## The Problem
+## You say this:
 
-When non-experts talk to AI coding agents, critical details get lost:
+```
+"make it secure"
+```
 
-| What you say | What ships |
+## Claude hears this:
+
+> **Expert translation [security]:** Enumerate the attack surface using STRIDE.
+> Check for: hardcoded secrets, missing input validation, auth flow gaps, overly
+> broad permissions, unencrypted data at rest. Prioritize findings by severity
+> (critical/high/medium) and likelihood. Flag any endpoints missing rate limiting
+> or audit logging.
+
+Then Claude acts on the expert version. Not yours.
+
+---
+
+## Why
+
+AI agents do exactly what you ask. That's the problem.
+
+| You say | What actually ships |
 |---|---|
-| "Make it secure" | OWASP violations, hardcoded secrets |
-| "Add a users table" | No indexes, no migration rollback plan |
-| "Write tests" | Boilerplate that tests assumptions, not edge cases |
-| "Train a better model" | No baseline, no eval methodology, no significance test |
-| "It keeps crashing" | Random fixes instead of profiling the actual bottleneck |
+| "make it secure" | OWASP violations, hardcoded secrets |
+| "add a users table" | No indexes, no rollback plan, no constraints |
+| "write tests" | Mocks that test their own assumptions |
+| "train a better model" | No baseline, no eval method, wrong metric |
+| "it keeps crashing" | Random guesses instead of reading the logs |
 
-The domain expert in your head would have said something very different. Expert is that domain expert.
+You don't know what to ask for because you're not a domain expert. **Expert is.**
 
-## How It Works
+It sits between you and Claude. You speak plain english. Claude gets expert-level instructions. The translation is shown to you (so you learn over time) but doesn't slow you down.
 
-```
-You:     "I think BTC is going up"
-                  |
-            Expert translates
-                  |
-Claude:  > Expert translation [trading]: Evaluate current BTC signal
-         > strength on Kalshi 15-min contracts. Check OFI and VWAP
-         > momentum features for directional bias. If metrics show
-         > quantifiable edge, propose a paper trade with fractional
-         > Kelly sizing and drawdown constraints. Define success
-         > criteria: target win rate, minimum Sharpe, max drawdown.
-                  |
-            Claude acts on the translated version
-```
-
-Direct technical instructions ("read file X", "run tests", "commit this") pass through unchanged. Expert only activates when your message benefits from domain refinement.
+---
 
 ## Install
 
 ```bash
-# Clone the repo
-git clone https://github.com/VeryLegit/expert.git
+git clone https://github.com/VeryLegit/expert.git ~/.claude/expert
+```
 
-# Register as a Claude Code plugin
-# Add to ~/.claude/plugins/installed_plugins.json:
-{
-  "expert@local": [{
-    "scope": "user",
-    "installPath": "/path/to/expert",
-    "version": "1.0.0"
-  }]
-}
+Add to `~/.claude/plugins/installed_plugins.json`:
 
-# Enable in ~/.claude/settings.json under enabledPlugins:
+```json
+"expert@local": [{ "scope": "user", "installPath": "~/.claude/expert", "version": "1.0.0" }]
+```
+
+Add to `~/.claude/settings.json` under `enabledPlugins`:
+
+```json
 "expert@local": true
 ```
+
+Restart Claude Code. Done.
+
+---
 
 ## Usage
 
 ```
-/expert on              # auto mode (recommended) — picks the right expert(s) per message
-/expert trading         # force a specific profile
-/expert off             # disable
-/expert                 # show status
+/expert on        # auto mode — picks the right expert(s) per message
+/expert off       # back to normal
+/expert security  # force a specific expert
+/expert           # check status
 ```
 
-**Auto mode** reads your message, selects the most relevant expert profile(s), and blends them if needed. You never have to think about which expert to use.
+That's it. Auto mode handles everything.
 
-## Built-in Profiles
+---
 
-Seven domain experts ship out of the box:
+<h2 id="profiles">7 Built-in Experts</h2>
 
-### Trading & Quantitative Finance
-> "I want to trade SOL" becomes "Evaluate SOL signal quality on Kalshi KXSOL15M. Check if calibration data covers SOL, assess OFI/VWAP features, and propose a paper trading pipeline with fractional Kelly sizing."
+<table>
+<tr>
+<td width="150"><strong>Security</strong></td>
+<td>
 
-Covers: position sizing, signal theory, risk management, market microstructure, backtesting methodology, execution optimization.
+**You:** "add login"
+**Expert:** Specify: auth protocol (OAuth 2.0/OIDC), session storage (httpOnly cookie vs JWT), token lifetime, revocation strategy, password policy, MFA consideration. What happens if the session token leaks?
 
-### Application Security
-> "Make it secure" becomes "Enumerate the attack surface using STRIDE. Identify: hardcoded secrets, missing input validation, auth flow gaps, overly broad permissions. Prioritize by severity and likelihood."
+</td>
+</tr>
+<tr>
+<td><strong>Database</strong></td>
+<td>
 
-Covers: OWASP Top 10, auth/authz patterns, secrets management, API security, threat modeling, supply chain security.
+**You:** "add a users table"
+**Expert:** Primary key strategy (UUID vs serial), required indexes on lookup columns, foreign key constraints, NOT NULL with defaults, migration rollback plan. What's the access pattern — read-heavy or write-heavy?
 
-### Data Science & ML
-> "Train a better model" becomes "Define 'better': which metric (AUC, Brier, F1), on what data split, vs what baseline, with what significance threshold? Assess current model's calibration and check for distribution shift."
+</td>
+</tr>
+<tr>
+<td><strong>Testing</strong></td>
+<td>
 
-Covers: model evaluation, feature engineering, experiment design, data pipelines, drift detection, training methodology.
+**You:** "write tests"
+**Expert:** What behavior are we verifying? What are the failure modes that matter? What would a bug actually look like? Branch coverage on critical paths > line coverage everywhere.
 
-### Systems & Infrastructure
-> "It keeps crashing" becomes "Identify category: OOM, unhandled exception, connection timeout, resource exhaustion, or dependency failure? Check structured logs first. What happens when this fails at 3 AM?"
+</td>
+</tr>
+<tr>
+<td><strong>Data/ML</strong></td>
+<td>
 
-Covers: reliability patterns, observability, performance profiling, deployment strategies, networking, process management.
+**You:** "train a better model"
+**Expert:** Define "better": which metric (AUC, F1, Brier), on what data split, vs what baseline, with what significance threshold? Check for data leakage and distribution shift first.
 
-### Frontend & UX
-> "Make it look better" becomes "Identify the specific issue: layout (spacing, alignment), typography (hierarchy, readability), color (contrast, palette), or information hierarchy (what's prominent vs buried)?"
+</td>
+</tr>
+<tr>
+<td><strong>Systems</strong></td>
+<td>
 
-Covers: information hierarchy, data visualization, accessibility (WCAG), performance (Core Web Vitals), responsive design, component architecture.
+**You:** "it keeps crashing"
+**Expert:** Identify category: OOM, unhandled exception, connection timeout, resource exhaustion, or dependency failure? Check structured logs first. What happens when this fails at 3 AM?
 
-### Database & Data Engineering
-> "Add a users table" becomes "Specify: primary key strategy, required indexes, foreign keys, constraints, NOT NULL defaults, and migration rollback plan. What's the access pattern — read-heavy or write-heavy?"
+</td>
+</tr>
+<tr>
+<td><strong>Frontend</strong></td>
+<td>
 
-Covers: schema design, migration safety, query optimization, data integrity, multi-tenancy, scaling patterns.
+**You:** "make it look better"
+**Expert:** Identify the specific issue: layout (spacing, alignment), typography (hierarchy, readability), color (contrast, palette), or information hierarchy (what's prominent vs buried)?
 
-### Testing & QA
-> "Write tests" becomes "What behavior are we verifying? What are the failure modes that matter? What would a bug actually look like? Branch coverage on critical paths > line coverage everywhere."
+</td>
+</tr>
+<tr>
+<td><strong>Trading</strong></td>
+<td>
 
-Covers: test strategy, edge case identification, test design patterns, coverage analysis, CI integration, specialized testing (property-based, contract, load).
+**You:** "I think BTC is going up"
+**Expert:** Evaluate signal strength on 15-min contracts. Check momentum features for directional bias. If metrics show quantifiable edge, propose a paper trade with Kelly sizing and drawdown constraints.
 
-## Auto-Selection & Blending
+</td>
+</tr>
+</table>
 
-In auto mode, Expert reads your message and picks the right profile(s):
+---
 
-| Your message | Expert(s) selected |
-|---|---|
-| "I think BTC is going up" | **trading** |
-| "Make the dashboard show risk exposure" | **trading + frontend** |
-| "Is it safe to store the wallet key like this?" | **security** |
-| "Train a better model for SOL" | **trading + data-ml** |
-| "Add a users table with login" | **database + security** |
-| "The engine keeps crashing on reconnect" | **systems** |
-| "Read the engine.py file" | *pass-through* (no translation) |
+## Auto-Selection
 
-When multiple profiles are relevant, the translation blends their perspectives:
+Expert picks the right specialist(s) for each message. Sometimes it blends two:
 
 ```
-> Expert translation [trading + frontend]: Display a correlation
-> matrix heatmap of active positions using a diverging color palette
-> (red for high positive, blue for negative). Include: pairwise
-> Pearson correlation, position sizes as annotations, and a threshold
-> line at r=0.7 to flag concentrated exposure.
+You: "show my risk exposure on the dashboard"
+
+> Expert translation [trading + frontend]: Display a correlation matrix
+> heatmap of active positions. Use a diverging color palette (red = high
+> positive correlation, blue = negative). Annotate with position sizes
+> and flag pairs above r=0.7 as concentrated exposure risk.
 ```
 
-## Add Your Own Profile
+```
+You: "add a users table with login"
 
-Drop a `.md` file in `profiles/`. That's it — no code changes needed.
+> Expert translation [database + security]: Design the users table with
+> UUID primary key, unique index on email, bcrypt-hashed password column
+> (never plaintext), created_at/updated_at timestamps. Add a sessions
+> table with token, expiry, and foreign key to users. Migration must be
+> reversible. Specify: session token rotation policy and revocation on
+> password change.
+```
+
+```
+You: "read the main.py file"
+
+(pass-through — no translation needed)
+```
+
+---
+
+<h2 id="add-your-own">Add Your Own Expert</h2>
+
+Drop a `.md` file in `profiles/`. That's the whole process.
 
 ```markdown
-# Your Domain Name
+# DevOps & Cloud
 
-**Identity:** Who this expert is and their background.
+**Identity:** Cloud infrastructure engineer with multi-cloud deployment expertise.
 
 ## Domain Knowledge
 
-- **Topic area:** Key concepts, mental models, vocabulary
-- **Another area:** More domain expertise
+- **IaC:** Terraform state management, drift detection, module composition
+- **Containers:** Multi-stage builds, health checks, resource limits, security scanning
+- **CI/CD:** Pipeline design, secret injection, artifact promotion, rollback triggers
 
 ## Translation Rules
 
-- "Vague thing users say" -> what the expert would specify instead
-- "Another vague thing" -> precise, actionable reformulation
-- Always consider: [what the expert never forgets to check]
+- "Deploy this" → specify: environment, rollback plan, health checks, monitoring, who gets paged
+- "Set up CI" → specify: trigger conditions, test gates, secret management, artifact caching
+- Always consider: what happens when this fails in production at 3 AM?
 
 ## Domain Signals (for auto-selection)
 
-Keywords: comma, separated, list, of, terms, that, trigger, this, profile
+Keywords: deploy, CI, CD, pipeline, Docker, Kubernetes, Terraform, AWS, GCP, infrastructure
 ```
+
+Save it. Restart. It just works.
+
+---
 
 ## Project Context
 
-Make translations even more specific by adding project context. Create `context/<directory-name>.md` — when you're working in a directory with that name, the context is automatically injected alongside the selected profiles.
+Make translations reference **your** codebase, not generic advice.
 
-This lets profiles stay generic and reusable while translations reference your specific files, architecture, and constraints.
+Create `context/<your-project-name>.md`:
 
 ```markdown
-# Project Context: my-project
+# Project Context: my-app
 
 ## Architecture
-- Key architectural decisions and patterns
+- Next.js frontend, FastAPI backend, PostgreSQL database
+- Deployed on Vercel (frontend) + Railway (backend)
 
 ## Key Files
-- `src/engine.py` — what it does
-- `src/models/` — what lives here
+- `api/routes/` — all API endpoints
+- `lib/db.py` — database connection and queries
 
 ## Constraints
-- Things the expert should always keep in mind
+- All new features must have integration tests
+- Database migrations must be reversible
 ```
 
-## Architecture
+When you `cd my-app` and use Claude Code, Expert automatically loads this context alongside the selected profiles. Your translations go from generic to surgical.
+
+---
+
+## How It Works
 
 ```
-~/workspace/expert/
-  .claude-plugin/plugin.json    # Plugin metadata
-  commands/expert.md            # /expert toggle command
-  hooks/hooks.json              # SessionStart hook registration
-  hooks-handlers/session-start.sh  # Core: loads engine + profiles + context
-  data/expert-mode.txt          # Persisted state (auto|off|<profile-name>)
-  profiles/                     # Domain expert profiles (*.md)
-    trading.md
-    security.md
-    data-ml.md
-    systems.md
-    frontend.md
-    database.md
-    testing.md
-  context/                      # Project-specific context (*.md)
-    predickt.md                 # Example: prediction market trading system
+  You type something vague
+           |
+    /expert on? ──no──> normal Claude behavior
+           |
+          yes
+           |
+    Pick expert profile(s)
+    based on message content
+           |
+    Translate through expert lens
+           |
+    Show translation as a note
+           |
+    Claude acts on expert version
 ```
 
-**How the pipeline works:**
+It's a Claude Code plugin. A SessionStart hook loads the translation engine + all profiles into context. For each message, Claude picks the right expert(s), shows you the translation, and acts on it. Mode persists across sessions.
 
-1. `/expert on` writes `auto` to `data/expert-mode.txt`
-2. At session start, `session-start.sh` reads the mode file
-3. If active: loads the translation engine prompt + all profile files + matching project context into Claude's `additionalContext`
-4. For each message, Claude auto-selects relevant profile(s), shows a brief translation note, then acts on the refined version
-5. Mode persists across sessions until you `/expert off`
+The entire thing is markdown files. No dependencies. No build step. No config.
 
-## Why This Works
+---
 
-Research backs it up:
+## The Research
 
-- **Meta-prompting** (one LLM refining another's input) shows 18+ percentage point accuracy gains in benchmarks (DSPy, Stanford)
-- The gap is **largest when the user is a novice** — exactly the use case
-- An ICLR 2025 paper covers "Meta-Prompt Optimization for Sequential Decision Making" — directly applicable to trading and multi-step engineering tasks
-- Teams spend **67% more time** debugging AI-generated code when domain context is missing (2025 State of Software Delivery)
+This isn't a guess. Meta-prompting works:
 
-Expert applies this research as a practical tool you can use today.
+- **+18 percentage points** accuracy when one LLM refines another's input ([DSPy, Stanford](https://dspy.ai))
+- **67% more time** spent debugging AI code when domain context is missing ([State of Software Delivery 2025](https://www.infoworld.com/article/4109129/ai-assisted-coding-creates-more-problems-report.html))
+- The improvement is **largest for novice users** — exactly the use case
+- ICLR 2025: [Meta-Prompt Optimization for Sequential Decision Making](https://iclr.cc/virtual/2025/32775)
 
-## License
+---
 
-MIT
+<p align="center">
+  <strong>MIT License</strong> &#8226; Built for <a href="https://claude.ai/code">Claude Code</a>
+</p>
