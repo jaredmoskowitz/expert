@@ -1,0 +1,56 @@
+---
+description: Rules for the Expert Claude Code plugin (profiles, hooks, command)
+globs: profiles/**,commands/**,hooks/**,hooks-handlers/**,.claude-plugin/**,context/**,docs/**
+alwaysApply: false
+---
+
+# expert plugin engineering rules
+
+Claude Code plugin that translates naive prompts through expert personas. See [AGENTS.md](mdc:AGENTS.md) for layout and behavior.
+
+## SessionStart hook is load-bearing
+
+[hooks-handlers/session-start.sh](mdc:hooks-handlers/session-start.sh) MUST:
+
+- Emit **valid JSON on stdout only** — no stray shell output before/after when active
+- Embed `ENGINE_PROMPT` and profile markdown into `additionalContext` with **`python3` JSON escaping** (unchanged pattern: `printf | python3 -c 'import sys,json; ...'`)
+- Read mode from [data/expert-mode.txt](mdc:data/expert-mode.txt): `off` | `auto` | `<profile-slug>`
+- In `auto` mode, concatenate every `profiles/*.md`. In forced mode, load only `profiles/${MODE}.md`
+- Resolve project context via `context/$(basename $(pwd)).md` only — do not rename this convention silently
+
+Breaking JSON shape breaks Claude Code startup for users who have mode enabled.
+
+## Mode file ↔ slash command parity
+
+[hooks-handlers/session-start.sh](mdc:hooks-handlers/session-start.sh) and [commands/expert.md](mdc:commands/expert.md) must agree on:
+
+- Filename and path resolution for `data/expert-mode.txt`
+- Allowed values (`off`, `auto`, or exact basename match of a profile file minus `.md`)
+- "Next session" semantics documented in responses
+
+Changing one side without the other wedges users stuck in stale modes.
+
+## Profile schema
+
+Markdown files under [profiles/](mdc:profiles) follow a fixed structure modeled on existing personas:
+
+1. Leading `# Title`
+2. `**Identity:**` one-liner
+3. `## Domain Knowledge`
+4. `## Translation Rules` with `Novice phrase → Expert instruction`
+5. `## Domain Signals (for auto-selection)` with keyword-heavy comma lists
+
+Stick to these headings so Claude's routing and future contributors stay consistent.
+
+## No dependencies, no telemetry
+
+- No `package.json`, `requirements.txt`, vendored libs, prebuilt binaries.
+- Do not add network requests, pingbacks, analytics, or auto-update checks.
+
+## Project context hygiene
+
+[`context/` files](mdc:context/) are instructional — never commit secrets, bearer tokens, private URLs, credentials, customer data, or real message bodies. Use placeholders and hypothetical examples in anything committed to Git.
+
+## Plugin manifests
+
+Changing [plugin.json](mdc:.claude-plugin/plugin.json) `name`, `commands`, hooks paths, or `version` implies checking [marketplace.json](mdc:.claude-plugin/marketplace.json) and [README.md](mdc:README.md) installation instructions remain accurate.
